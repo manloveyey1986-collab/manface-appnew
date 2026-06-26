@@ -129,7 +129,7 @@ if not st.session_state.logged_in:
                 st.success("สมัครสมาชิกสำเร็จ! สลับไปล็อกอินได้เลยคราบ")
 
 # =========================================================================
-# SECTION 3: PREMIUM SIDEBAR NAVIGATION
+# SECTION 3 & 4: APPLICATION MAIN MODULES
 # =========================================================================
 else:
     my_name = st.session_state.username
@@ -138,21 +138,14 @@ else:
     with st.sidebar:
         st.markdown("<h1 style='color: #FF1493; text-align: center; margin-bottom: 0px;'>💗 Manface</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #DB7093; font-size: 14px;'>Super App Ecosystem Pro</p>", unsafe_allow_html=True)
-        
         with st.container(border=True):
-            col_av, col_name = st.columns(2)
-            with col_av: st.markdown("<h2>💗</h2>", unsafe_allow_html=True)
-            with col_name:
-                st.markdown(f"**{my_name}**")
-                st.caption("status: ออนไลน์จริง")
-                
+            st.markdown(f"**{my_name}** (ออนไลน์จริง)")
         st.write("---")
         st.markdown("### 🏠 ฟังก์ชันหลัก")
         if st.button("🗞️ ฟีดข่าวสังคม (News Feed)"): switch_page("Feed")
         if st.button("🤖 Meta AI อัจฉริยะ (Chatbot)"): switch_page("MetaAI")
         if st.button("👥 ระบบเครือข่ายเพื่อน (Friends)"): switch_page("FriendsList")
         if st.button("💬 ห้องแชทสดทุกคน (Global Chat)"): switch_page("GlobalChat")
-        
         st.markdown("### 🛍️ ตลาดและความบันเทิง")
         if st.button("🛒 มาร์เก็ตเพลส (Marketplace)"): switch_page("Marketplace")
         if st.button("🎮 ศูนย์รวมเกมส์ (Gaming Hub)"): switch_page("Gaming")
@@ -161,12 +154,8 @@ else:
             st.session_state.logged_in = False
             st.rerun()
 
-    # =========================================================================
-    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY
-    # =========================================================================
     if st.session_state.page == "Feed":
         st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface (โพสต์เด้งเรียลไทม์)</h2>", unsafe_allow_html=True)
-        
         with st.container(border=True):
             input_text = st.text_area("เขียนข้อความบรรยาย...", key="new_post_text")
             if st.button("🚀 เผยแพร่โพสต์ลงกระดานข่าว"):
@@ -174,9 +163,7 @@ else:
                     fetch_cloud_data("add_post", {"user": my_name, "text": input_text})
                     st.balloons()
                     st.rerun()
-
         st.write("---")
-        
         for post in cloud_data.get("posts", []):
             with st.container(border=True):
                 st.markdown(f"🗣️ **{post['user']}**  •  <span style='color: gray; font-size: 12px;'>{post['time']}</span>", unsafe_allow_html=True)
@@ -185,15 +172,12 @@ else:
     elif st.session_state.page == "FriendsList":
         st.markdown("<h2 style='color: #DB7093;'>👥 เครือข่ายการเพิ่มเพื่อนสมาชิกออนไลน์</h2>", unsafe_allow_html=True)
         st.subheader("📌 เพื่อนของฉันตอนนี้")
-        if not my_friends:
-            st.info("คุณยังไม่มีรายชื่อเพื่อนในระบบ")
+        if not my_friends: st.info("คุณยังไม่มีรายชื่อเพื่อนในระบบ")
         else:
-            for friend in my_friends:
-                st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
+            for friend in my_friends: st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
 
     elif st.session_state.page == "GlobalChat":
         st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสดเครือข่ายสังคม (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
-        
         chat_box = st.container(height=350, border=True)
         with chat_box:
             for chat in cloud_data.get("chats", []):
@@ -201,8 +185,15 @@ else:
                     st.markdown(f"<div style='text-align: right;'><span style='background-color:#FFB6C1; display:inline-block;' class='chat-bubble'><b>คุณ</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div style='text-align: left;'><span style='background-color:#FFF; border:1px solid #FFB6C1; display:inline-block;' class='chat-bubble'><b>{chat['sender']}</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
-                    
         with st.form("send_live_msg", clear_on_submit=True):
             chat_input = st.text_input("พิมพ์ข้อความคุยแชทสด...")
             if st.form_submit_button("ส่งข้อความด่วน 🚀"):
                 if chat_input.strip():
+                    fetch_cloud_data("add_chat", {"sender": my_name, "text": chat_input})
+                    st.rerun()
+
+    elif st.session_state.page == "MetaAI":
+        st.markdown("<h2 style='color: #DB7093;'>🤖 Meta AI อัจฉริยะ</h2>", unsafe_allow_html=True)
+        for msg in st.session_state.ai_messages: st.chat_message(msg["role"]).write(msg["content"])
+        if prompt := st.chat_input("พิมพ์ข้อความเพื่อคุยกับ AI..."):
+            st.session_state.ai_messages.append({"role": "user", "content": prompt})
