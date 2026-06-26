@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -165,7 +166,7 @@ else:
             st.rerun()
 
     # =========================================================================
-    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY (แก้ไขการย่อหน้าผ่าน 100%)
+    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY
     # =========================================================================
     if st.session_state.page == "Feed":
         st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface (โพสต์เด้งเรียลไทม์)</h2>", unsafe_allow_html=True)
@@ -185,7 +186,7 @@ else:
                 st.markdown(f"🗣️ **{post['user']}**  •  <span style='color: gray; font-size: 12px;'>{post['time']}</span>", unsafe_allow_html=True)
                 st.write(post['text'])
 
-    # --- ฟังก์ชันเมนูหน้าเพิ่มเพื่อน (แก้ไขจัดระเบียบย่อหน้าใหม่) ---
+    # --- ฟังก์ชันเมนูหน้าเพิ่มเพื่อน ---
     elif st.session_state.page == "FriendsList":
         st.markdown("<h2 style='color: #DB7093;'>👥 เครือข่ายการเพิ่มเพื่อนสมาชิกออนไลน์</h2>", unsafe_allow_html=True)
         st.subheader("📌 เพื่อนของฉันตอนนี้")
@@ -195,7 +196,7 @@ else:
             for friend in my_friends:
                 st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
 
-    # --- ฟังก์ชันแชทรวมด่วน เด้งตรงกันทุกเครื่อง (แก้ไขจัดระเบียบย่อหน้าใหม่) ---
+    # --- ฟังก์ชันแชทรวมด่วน เด้งตรงกันทุกเครื่อง ---
     elif st.session_state.page == "GlobalChat":
         st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสดเครือข่ายสังคม (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
         
