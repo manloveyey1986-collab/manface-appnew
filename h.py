@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -17,7 +16,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# บังคับใช้ธีมพรีเมียมสีชมพูอ่อนสไตล์ Luxury Minimalist ผ่าน CSS ขั้นสูงที่คุณออกแบบ
 st.markdown("""
     <style>
         .stApp { background-color: #FFF0F5; }
@@ -67,7 +65,6 @@ st.markdown("""
 # =========================================================================
 # SECTION 2: 🌐 CLOUD DATABASE INTEGRATION (เชื่อมต่อฐานข้อมูลสาธารณะ)
 # =========================================================================
-# ระบบฐานข้อมูลกลางที่แชร์ข้อความและโพสต์ของทุกคนผ่านระบบออนไลน์
 API_URL = "https://google.com"
 
 def fetch_cloud_data(action, payload={}):
@@ -78,7 +75,6 @@ def fetch_cloud_data(action, payload={}):
     except:
         return {"users": {"admin": "1234"}, "posts": [], "chats": [], "friends": {}}
 
-# ดึงข้อมูลจากคลาวด์มาอัปเดตหน้าจอทุกครั้งที่เปิดรีเฟรช
 cloud_data = fetch_cloud_data("get_all")
 
 if 'page' not in st.session_state: st.session_state.page = "Feed"
@@ -133,7 +129,7 @@ if not st.session_state.logged_in:
                 st.success("สมัครสมาชิกสำเร็จ! สลับไปล็อกอินได้เลยคราบ")
 
 # =========================================================================
-# SECTION 3: PREMIUM SIDEBAR NAVIGATION (รูปแบบเดิมเป๊ะๆ)
+# SECTION 3: PREMIUM SIDEBAR NAVIGATION
 # =========================================================================
 else:
     my_name = st.session_state.username
@@ -186,7 +182,6 @@ else:
                 st.markdown(f"🗣️ **{post['user']}**  •  <span style='color: gray; font-size: 12px;'>{post['time']}</span>", unsafe_allow_html=True)
                 st.write(post['text'])
 
-    # --- ฟังก์ชันเมนูหน้าเพิ่มเพื่อน ---
     elif st.session_state.page == "FriendsList":
         st.markdown("<h2 style='color: #DB7093;'>👥 เครือข่ายการเพิ่มเพื่อนสมาชิกออนไลน์</h2>", unsafe_allow_html=True)
         st.subheader("📌 เพื่อนของฉันตอนนี้")
@@ -196,7 +191,6 @@ else:
             for friend in my_friends:
                 st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
 
-    # --- ฟังก์ชันแชทรวมด่วน เด้งตรงกันทุกเครื่อง ---
     elif st.session_state.page == "GlobalChat":
         st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสดเครือข่ายสังคม (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
         
@@ -206,3 +200,9 @@ else:
                 if chat["sender"] == my_name:
                     st.markdown(f"<div style='text-align: right;'><span style='background-color:#FFB6C1; display:inline-block;' class='chat-bubble'><b>คุณ</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
                 else:
+                    st.markdown(f"<div style='text-align: left;'><span style='background-color:#FFF; border:1px solid #FFB6C1; display:inline-block;' class='chat-bubble'><b>{chat['sender']}</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
+                    
+        with st.form("send_live_msg", clear_on_submit=True):
+            chat_input = st.text_input("พิมพ์ข้อความคุยแชทสด...")
+            if st.form_submit_button("ส่งข้อความด่วน 🚀"):
+                if chat_input.strip():
