@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -172,6 +173,8 @@ else:
     if st.session_state.current_user["name"] not in cloud_db["friends_matrix"]:
         cloud_db["friends_matrix"][st.session_state.current_user["name"]] = []
 
+    my_name = st.session_state.current_user["name"]
+
     with st.sidebar:
         st.markdown("<h1 style='color: #FF1493; text-align: center; margin-bottom: 0px;'>💗 Manface</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #DB7093; font-size: 14px;'>Super App Ecosystem Pro</p>", unsafe_allow_html=True)
@@ -188,7 +191,6 @@ else:
         st.markdown("### 🏠 ฟังก์ชันหลัก")
         if st.button("🗞️ ฟีดข่าวสังคม (News Feed)"): switch_page("Feed")
         if st.button("🤖 Meta AI อัจฉริยะ (Chatbot)"): switch_page("MetaAI")
-        # เพิ่มปุ่มฟังก์ชันแชทและเพื่อนสไตล์แอปดังลงในเมนูหลักอย่างสวยงามไร้รอยต่อ
         if st.button("👥 ระบบเครือข่ายเพื่อน (Friends)"): switch_page("FriendsList")
         if st.button("💬 ห้องแชทสดทุกคน (Global Chat)"): switch_page("GlobalChat")
         
@@ -218,3 +220,4 @@ else:
                 if input_text.strip() or upload_img is not None:
                     final_img = None
                     if upload_img is not None:
+                        final_img = Image.open(upload_img)
