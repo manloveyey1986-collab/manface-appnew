@@ -53,49 +53,61 @@ st.markdown("""
             border-left: 5px solid #FF69B4;
             box-shadow: 0px 2px 8px rgba(0,0,0,0.05);
         }
+        .chat-bubble {
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 5px;
+            max-width: 70%;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # =========================================================================
-# SECTION 2: CORE DATABASE ARCHITECTURE (SESSION STATE)
+# SECTION 2: CORE DATABASE ARCHITECTURE (SESSION STATE) & CLOUD SERVER
 # =========================================================================
 
-# 1. ฐานข้อมูลผู้ใช้ส่วนกลางแชร์ออนไลน์ (แชร์ระหว่างเครื่องคนดู)
-if "global_users" not in st.session_state:
-    st.session_state["global_users"] = {"admin": "1234"}
+# 🌐 ฐานข้อมูลเซิร์ฟเวอร์ส่วนกลาง (เพื่อให้ทุกคนเห็นโพสต์ แชท และเพื่อนตรงกันทันทีแบบแอปดัง)
+@st.cache_resource
+def init_shared_cloud_database():
+    return {
+        "users": {"admin": "1234", "แมนเฟซ": "1234"},
+        "friends_matrix": {"admin": [], "แมนเฟซ": []},
+        "posts_db": [
+            {
+                "id": 1,
+                "user": "กวินท์ ดูวาล",
+                "time": "10 นาทีที่แล้ว",
+                "text": "ระบบแอป Manface ตัวใหม่รันโค้ดยาวลื่นไหลมากครับ อัปโหลดรูปภาพได้จริงด้วย โคตรตึง! 🔥",
+                "image": None,
+                "likes": 84,
+                "comments": [{"user": "สมชาย ใจดี", "text": "สวยงามมากครับแอปนี้"}]
+            },
+            {
+                "id": 2,
+                "user": "ระบบอัตโนมัติ",
+                "time": "1 ชั่วโมงที่แล้ว",
+                "text": "ยินดีต้อนรับสู่โครงสร้างระบบ Super App ใช้งานได้จริงทุกหมวดหมู่ เลือกเมนูด้านซ้ายเพื่อเริ่มสนุกได้เลยครับ",
+                "image": None,
+                "likes": 29,
+                "comments": []
+            }
+        ],
+        "global_chats": [
+            {"sender": "ระบบ", "text": "ยินดีต้อนรับสู่ห้องแชทด่วนของทุกคนคราบ!", "time": "12:00"}
+        ]
+    }
 
-# 2. สถานะการล็อกอินของเครื่องที่เข้ามาเปิดดู
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
+cloud_db = init_shared_cloud_database()
 
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = {"name": "นายแมนเฟซ พรีเมียม", "avatar": "💗"}
-
+# ตั้งค่าสถานะประจำเครื่องของผู้เข้าชม (รูปแบบเดิม)
 if 'page' not in st.session_state:
     st.session_state.page = "Feed"
 
-# 3. กระดานฟีดโพสต์ข่าวสารส่วนกลางคลาวด์
-if 'posts_db' not in st.session_state:
-    st.session_state.posts_db = [
-        {
-            "id": 1,
-            "user": "กวินท์ ดูวาล",
-            "time": "10 นาทีที่แล้ว",
-            "text": "ระบบแอป Manface ตัวใหม่รันโค้ดยาวลื่นไหลมากครับ อัปโหลดรูปภาพได้จริงด้วย โคตรตึง! 🔥",
-            "image": None,
-            "likes": 84,
-            "comments": [{"user": "สมชาย ใจดี", "text": "สวยงามมากครับแอปนี้"}]
-        },
-        {
-            "id": 2,
-            "user": "ระบบอัตโนมัติ",
-            "time": "1 ชั่วโมงที่แล้ว",
-            "text": "ยินดีต้อนรับสู่โครงสร้างระบบ Super App ใช้งานได้จริงทุกหมวดหมู่ เลือกเมนูด้านซ้ายเพื่อเริ่มสนุกได้เลยครับ",
-            "image": None,
-            "likes": 29,
-            "comments": []
-        }
-    ]
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+if 'current_user' not in st.session_state:
+    st.session_state.current_user = {"name": "นายแมนเฟซ พรีเมียม", "avatar": "💗"}
 
 if 'ai_messages' not in st.session_state:
     st.session_state.ai_messages = [
@@ -121,49 +133,45 @@ def switch_page(target):
     st.session_state.page = target
 
 # =========================================================================
-# หน้าต่างกรองสิทธิ์ระบบรักษาความปลอดภัย: เข้าสู่ระบบ / สมัครสมาชิก
+# 📝 ประตูล็อกอินเข้าสู่ระบบ (ถ้ายังไม่ล็อกอิน ให้สมัครสมาชิกตรงนี้ก่อน)
 # =========================================================================
-if not st.session_state["logged_in"]:
+if not st.session_state.logged_in:
     st.title("💖 ยินดีต้อนรับสู่ Manface Super App Pro")
-    st.write("กรุณาสมัครสมาชิก หรือ เข้าสู่ระบบเพื่อเริ่มใช้งานระบบสังคมออนไลน์ออนไลน์")
+    st.write("กรุณาสมัครสมาชิก หรือ เข้าสู่ระบบเพื่อเชื่อมต่อเครือข่ายออนไลน์ร่วมกับคนอื่น")
     
     tab1, tab2 = st.tabs(["➡️ เข้าสู่ระบบ (Login)", "📝 สมัครสมาชิก (Register)"])
-    
     with tab1:
-        st.subheader("🔑 เข้าใช้งานระบบ")
-        login_user = st.text_input("ชื่อผู้ใช้งาน (Username):", key="app_login_u")
-        login_pass = st.text_input("รหัสผ่าน (Password):", type="password", key="app_login_p")
-        
+        log_u = st.text_input("ชื่อผู้ใช้งาน (Username):", key="gate_u").strip()
+        log_p = st.text_input("รหัสผ่าน (Password):", type="password", key="gate_p").strip()
         if st.button("ตกลงเข้าสู่ระบบ", type="primary"):
-            if login_user in st.session_state["global_users"] and st.session_state["global_users"][login_user] == login_pass:
-                st.session_state["logged_in"] = True
-                st.session_state.current_user = {"name": login_user, "avatar": "💗"}
-                st.success(f"🎉 ยินดีต้อนรับคุณ {login_user}!")
+            if log_u in cloud_db["users"] and cloud_db["users"][log_u] == log_p:
+                st.session_state.logged_in = True
+                st.session_state.current_user = {"name": log_u, "avatar": "💗"}
+                st.success("เข้าสู่ระบบสำเร็จ!")
                 st.rerun()
             else:
-                st.error("❌ ชื่อผู้ใช้งาน หรือ รหัสผ่านไม่ถูกต้อง")
-                
+                st.error("Username หรือ Password ไม่ถูกต้องคราบ")
     with tab2:
-        st.subheader("📝 สร้างบัญชีผู้ใช้ใหม่")
-        reg_user = st.text_input("ตั้งชื่อผู้ใช้งาน (ภาษาอังกฤษ):", key="app_reg_u")
-        reg_pass1 = st.text_input("ตั้งรหัสผ่าน:", type="password", key="app_reg_p1")
-        reg_pass2 = st.text_input("ยืนยันรหัสผ่านอีกครั้ง:", type="password", key="app_reg_p2")
-        
+        reg_u = st.text_input("ตั้งชื่อผู้ใช้งาน (ภาษาอังกฤษ):", key="gate_reg_u").strip()
+        reg_p1 = st.text_input("ตั้งรหัสผ่าน:", type="password", key="gate_reg_p1").strip()
+        reg_p2 = st.text_input("ยืนยันรหัสผ่านอีกครั้ง:", type="password", key="gate_reg_p2").strip()
         if st.button("ยืนยันการสมัครสมาชิก"):
-            if not reg_user or not reg_pass1:
-                st.error("❌ กรุณากรอกข้อมูลให้ครบถ้วน")
-            elif reg_pass1 != reg_pass2:
-                st.error("❌ รหัสผ่านไม่ตรงกัน")
-            elif reg_user in st.session_state["global_users"]:
-                st.error("❌ ชื่อนี้มีคนใช้งานแล้ว")
+            if not reg_u or not reg_p1: st.error("กรุณากรอกข้อมูลให้ครบถ้วน")
+            elif reg_p1 != reg_p2: st.error("รหัสผ่านไม่ตรงกัน")
+            elif reg_u in cloud_db["users"]: st.error("ชื่อนี้มีคนใช้แล้ว")
             else:
-                st.session_state["global_users"][reg_user] = reg_pass1
-                st.success("✅ สมัครสมาชิกสำเร็จ! สลับไปแท็บเข้าสู่ระบบได้เลย")
+                cloud_db["users"][reg_u] = reg_p1
+                cloud_db["friends_matrix"][reg_u] = []
+                st.success("สมัครสมาชิกสำเร็จ! สลับไปล็อกอินได้เลยคราบ")
 
 # =========================================================================
-# SECTION 3: PREMIUM SIDEBAR NAVIGATION (ทำงานเมื่อล็อกอินผ่านแล้ว)
+# SECTION 3: PREMIUM SIDEBAR NAVIGATION (รูปแบบเดิมเป๊ะๆ)
 # =========================================================================
 else:
+    # ตรวจสอบลิสต์เพื่อนหลังบ้าน
+    if st.session_state.current_user["name"] not in cloud_db["friends_matrix"]:
+        cloud_db["friends_matrix"][st.session_state.current_user["name"]] = []
+
     with st.sidebar:
         st.markdown("<h1 style='color: #FF1493; text-align: center; margin-bottom: 0px;'>💗 Manface</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #DB7093; font-size: 14px;'>Super App Ecosystem Pro</p>", unsafe_allow_html=True)
@@ -174,26 +182,29 @@ else:
                 st.markdown(f"<h2>{st.session_state.current_user['avatar']}</h2>", unsafe_allow_html=True)
             with col_name:
                 st.markdown(f"**{st.session_state.current_user['name']}**")
-                st.caption("สถานะ: สมาชิกพรีเมียม")
+                st.caption("status: สมาชิกออนไลน์")
                 
         st.write("---")
         st.markdown("### 🏠 ฟังก์ชันหลัก")
         if st.button("🗞️ ฟีดข่าวสังคม (News Feed)"): switch_page("Feed")
         if st.button("🤖 Meta AI อัจฉริยะ (Chatbot)"): switch_page("MetaAI")
+        # เพิ่มปุ่มฟังก์ชันแชทและเพื่อนสไตล์แอปดังลงในเมนูหลักอย่างสวยงามไร้รอยต่อ
+        if st.button("👥 ระบบเครือข่ายเพื่อน (Friends)"): switch_page("FriendsList")
+        if st.button("💬 ห้องแชทสดทุกคน (Global Chat)"): switch_page("GlobalChat")
+        
         st.markdown("### 🛍️ ตลาดและความบันเทิง")
         if st.button("🛒 มาร์เก็ตเพลส (Marketplace)"): switch_page("Marketplace")
         if st.button("🎮 ศูนย์รวมเกมส์ (Gaming Hub)"): switch_page("Gaming")
         st.markdown("### 📈 ข้อมูลหลังบ้านธุรกิจ")
         if st.button("📊 ตัวจัดการโฆษณา (Ads Manager)"): switch_page("Ads")
         st.write("---")
-        if st.button("🚪 ออกจากระบบ (Logout)", type="secondary"):
-            st.session_state["logged_in"] = False
-            st.session_state.current_user = {"name": "นายแมนเฟซ พรีเมียม", "avatar": "💗"}
+        if st.button("🚪 ออกจากระบบ (Logout)"):
+            st.session_state.logged_in = False
             st.rerun()
         st.caption("เวอร์ชันคอนเซ็ปต์ใช้งานจริง • v2.5.0")
 
     # =========================================================================
-    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY
+    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY (รูปแบบเดิม+เชื่อมออนไลน์จริง)
     # =========================================================================
     if st.session_state.page == "Feed":
         st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface</h2>", unsafe_allow_html=True)
@@ -203,20 +214,7 @@ else:
             input_text = st.text_area("เขียนข้อความบรรยาย...", key="new_post_text")
             upload_img = st.file_uploader("📸 แนบรูปภาพประกอบโพสต์ของคุณ", type=["png", "jpg", "jpeg"])
             
-            if st.button("🚀 เผยแพร่โพสต์ลงกระดานข่าว"):
+            if st.button("🚀 เเพร่เผยโพสต์ลงกระดานข่าว"):
                 if input_text.strip() or upload_img is not None:
                     final_img = None
                     if upload_img is not None:
-                        final_img = Image.open(upload_img)
-                        
-                    new_post_data = {
-                        "id": len(st.session_state.posts_db) + 1,
-                        "user": st.session_state.current_user["name"],
-                        "time": "เมื่อสักครู่นี้",
-                        "text": input_text,
-                        "image": final_img,
-                        "likes": 0,
-                        "comments": []
-                    }
-                    st.session_state.posts_db.insert(0, new_post_data)
-                    st.balloons()
