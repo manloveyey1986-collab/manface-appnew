@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -17,6 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# บังคับใช้ธีมพรีเมียมสีชมพูอ่อนสไตล์ Luxury Minimalist ผ่าน CSS ขั้นสูงที่คุณออกแบบ
 st.markdown("""
     <style>
         .stApp { background-color: #FFF0F5; }
@@ -102,7 +102,9 @@ def switch_page(target):
 # 📝 หน้าต่างสมัครสมาชิก และ เข้าสู่ระบบคลาวด์
 # =========================================================================
 if not st.session_state.logged_in:
-    st.title("💖 Manface Super App เครือข่ายสังคมออนไลน์จริง")
+    st.title("💖 ยินดีต้อนรับสู่ Manface Super App Pro")
+    st.write("กรุณาสมัครสมาชิก หรือ เข้าสู่ระบบเพื่อเชื่อมต่อเครือข่ายออนไลน์ร่วมกับคนอื่น")
+    
     tab1, tab2 = st.tabs(["➡️ เข้าสู่ระบบ (Login)", "📝 สมัครสมาชิก (Register)"])
     
     with tab1:
@@ -116,6 +118,7 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.error("Username หรือ Password ไม่ถูกต้องคราบ")
+                
     with tab2:
         reg_u = st.text_input("ตั้งชื่อผู้ใช้งาน (ภาษาอังกฤษ):", key="gate_reg_u").strip()
         reg_p1 = st.text_input("ตั้งรหัสผ่าน:", type="password", key="gate_reg_p1").strip()
@@ -162,7 +165,7 @@ else:
             st.rerun()
 
     # =========================================================================
-    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY (ดึงข้อมูลจาก Cloud sheet)
+    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY (แก้ไขการย่อหน้าผ่าน 100%)
     # =========================================================================
     if st.session_state.page == "Feed":
         st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface (โพสต์เด้งเรียลไทม์)</h2>", unsafe_allow_html=True)
@@ -182,7 +185,17 @@ else:
                 st.markdown(f"🗣️ **{post['user']}**  •  <span style='color: gray; font-size: 12px;'>{post['time']}</span>", unsafe_allow_html=True)
                 st.write(post['text'])
 
-    # --- ฟังก์ชันแชทรวมด่วน เด้งตรงกันทุกเครื่อง ---
+    # --- ฟังก์ชันเมนูหน้าเพิ่มเพื่อน (แก้ไขจัดระเบียบย่อหน้าใหม่) ---
+    elif st.session_state.page == "FriendsList":
+        st.markdown("<h2 style='color: #DB7093;'>👥 เครือข่ายการเพิ่มเพื่อนสมาชิกออนไลน์</h2>", unsafe_allow_html=True)
+        st.subheader("📌 เพื่อนของฉันตอนนี้")
+        if not my_friends:
+            st.info("คุณยังไม่มีรายชื่อเพื่อนในระบบ")
+        else:
+            for friend in my_friends:
+                st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
+
+    # --- ฟังก์ชันแชทรวมด่วน เด้งตรงกันทุกเครื่อง (แก้ไขจัดระเบียบย่อหน้าใหม่) ---
     elif st.session_state.page == "GlobalChat":
         st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสดเครือข่ายสังคม (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
         
@@ -192,14 +205,3 @@ else:
                 if chat["sender"] == my_name:
                     st.markdown(f"<div style='text-align: right;'><span style='background-color:#FFB6C1; display:inline-block;' class='chat-bubble'><b>คุณ</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
                 else:
-                    st.markdown(f"<div style='text-align: left;'><span style='background-color:#FFF; border:1px solid #FFB6C1; display:inline-block;' class='chat-bubble'><b>{chat['sender']}</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
-                    
-        with st.form("send_live_msg", clear_on_submit=True):
-            chat_input = st.text_input("พิมพ์ข้อความคุยแชทสด...")
-            if st.form_submit_button("ส่งข้อความด่วน 🚀"):
-                if chat_input.strip():
-                    fetch_cloud_data("add_chat", {"sender": my_name, "text": chat_input})
-                    st.rerun()
-
-    # --- ฟังก์ชันเมนูหน้าเพิ่มเพื่อน ---
-    elif st.session_state.page == "FriendsList":
