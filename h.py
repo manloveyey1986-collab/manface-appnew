@@ -15,7 +15,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# บังคับใช้ธีมพรีเมียมสีชมพูอ่อนสไตล์ Luxury Minimalist ผ่าน CSS ขั้นสูงที่คุณออกแบบ
 st.markdown("""
     <style>
         .stApp { background-color: #FFF0F5; }
@@ -86,11 +85,10 @@ def get_internal_facebook_db():
 
 db = get_internal_facebook_db()
 
-# ตั้งค่าตัวแปรประจำเครื่องคนเปิดหน้าจอ
 if 'page' not in st.session_state: st.session_state.page = "Feed"
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'username' not in st.session_state: st.session_state.username = ""
-if 'ai_messages' not in st.session_state: st.session_state.ai_messages = [{"role": "assistant", "content": "สวัสดีค่ะ! ฉันคือ Meta AI ผู้ช่วยอัจฉริยะ"}]
+if 'ai_messages' not in st.session_state: st.session_state.ai_messages = [{"role": "assistant", "content": "สวัสดีค่ะ! ฉันคือ Meta AI ผู้ช่วยอัจฉริยะในธีมสีชมพูของคุณ"}]
 if 'shopping_cart' not in st.session_state: st.session_state.shopping_cart = []
 if 'game_number' not in st.session_state: st.session_state.game_number = random.randint(1, 100)
 if 'game_count' not in st.session_state: st.session_state.game_count = 0
@@ -102,8 +100,10 @@ if 'market_products' not in st.session_state:
         {"id": 103, "title": "หูฟังไร้สายขจัดเสียงรบกวน (ชมพูพาสเทล)", "price": 3500, "owner": "Gadget Studio"}
     ]
 
+def switch_page(target):
+    st.session_state.page = target
 # =========================================================================
-# 📝 หน้าต่างประตูล็อกอินเข้าสู่ระบบ (Gatekeeper)
+# 📝 หน้าต่างประตูล็อกอินเข้าสู่ระบบ (ต้องผ่านจุดนี้ก่อนเข้าใช้งานแอป)
 # =========================================================================
 if not st.session_state.logged_in:
     st.title("💖 ยินดีต้อนรับสู่ Manface Super App Pro")
@@ -112,6 +112,7 @@ if not st.session_state.logged_in:
     tab1, tab2 = st.tabs(["➡️ เข้าสู่ระบบ (Login)", "📝 สมัครสมาชิก (Register)"])
     
     with tab1:
+        st.subheader("🔑 ลงชื่อเข้าใช้งาน")
         log_u = st.text_input("ชื่อผู้ใช้งาน (Username):", key="gate_u").strip()
         log_p = st.text_input("รหัสผ่าน (Password):", type="password", key="gate_p").strip()
         if st.button("ตกลงเข้าสู่ระบบ", type="primary"):
@@ -124,33 +125,31 @@ if not st.session_state.logged_in:
                 st.error("ชื่อผู้ใช้งาน หรือ รหัสผ่านไม่ถูกต้องคราบ")
                 
     with tab2:
+        st.subheader("📝 สมัครสมาชิกใหม่")
         reg_u = st.text_input("ตั้งชื่อผู้ใช้งาน (ภาษาอังกฤษ):", key="gate_reg_u").strip()
         reg_p1 = st.text_input("ตั้งรหัสผ่าน:", type="password", key="gate_reg_p1").strip()
         reg_p2 = st.text_input("ยืนยันรหัสผ่านอีกครั้ง:", type="password", key="gate_reg_p2").strip()
         if st.button("ยืนยันการสมัครสมาชิก"):
-            if not reg_u or not reg_p1: st.error("กรุณากรอกข้อมูลให้ครบถ้วน")
-            elif reg_p1 != reg_p2: st.error("รหัสผ่านสองช่องไม่ตรงกัน")
-            elif reg_u in db["users"]: st.error("ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว")
+            if not reg_u or not reg_p1: 
+                st.error("กรุณากรอกข้อมูลให้ครบถ้วน")
+            elif reg_p1 != reg_p2: 
+                st.error("รหัสผ่านสองช่องไม่ตรงกัน")
+            elif reg_u in db["users"]: 
+                st.error("ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว")
             else:
                 db["users"][reg_u] = reg_p1
                 db["friends"][reg_u] = []
                 st.success("สมัครสมาชิกสำเร็จ! สลับไปที่แท็บ 'เข้าสู่ระบบ' ได้เลยคราบ")
-
 # =========================================================================
-# 🏠 โซนหน้าต่างแอปพลิเคชันหลัก (เมื่อผู้ใช้งานผ่านการล็อกอินแล้ว)
+# 🏠 โซนหน้าต่างแอปพลิเคชันหลัก (เมื่อล็อกอินสำเร็จแล้ว)
 # =========================================================================
-else:
-    st.title("ยินดีต้อนรับเข้าสู่ Manface Super App")
-    st.write(f"สวัสดีคราบคุณ **{st.session_state.username}** บัญชีของคุณพร้อมทำงานแล้ว")
-    if st.button("ออกจากระบบ"):
-        st.session_state.logged_in = False
-        st.rerun()
 else:
     my_name = st.session_state.username
-    if my_name not in db["friends"]: db["friends"][my_name] = []
+    if my_name not in db["friends"]: 
+        db["friends"][my_name] = []
     my_friends = db["friends"][my_name]
 
-    # SECTION 3: PREMIUM SIDEBAR NAVIGATION (แถบนำทางสไตล์เฟซบุ๊ก)
+    # SECTION 3: PREMIUM SIDEBAR NAVIGATION (แถบนำทาง)
     with st.sidebar:
         st.markdown("<h1 style='color: #FF1493; text-align: center; margin-bottom: 0px;'>💗 Manface</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #DB7093; font-size: 14px;'>Super App Ecosystem Pro</p>", unsafe_allow_html=True)
@@ -162,24 +161,24 @@ else:
         st.write("---")
         st.markdown("### 🏠 ฟังก์ชันหลัก (Facebook Features)")
         if st.button("🗞️ ฟีดข่าวสังคม (News Feed)", key="nav_feed"): 
-            st.session_state.page = "Feed"
+            switch_page("Feed")
             st.rerun()
         if st.button("🤖 Meta AI อัจฉริยะ (Chatbot)", key="nav_ai"): 
-            st.session_state.page = "MetaAI"
+            switch_page("MetaAI")
             st.rerun()
         if st.button("👥 ระบบเครือข่ายเพื่อน (Friends)", key="nav_friends"): 
-            st.session_state.page = "FriendsList"
+            switch_page("FriendsList")
             st.rerun()
         if st.button("💬 ห้องแชทสดทุกคน (Messenger)", key="nav_chat"): 
-            st.session_state.page = "GlobalChat"
+            switch_page("GlobalChat")
             st.rerun()
         
         st.markdown("### 🛍️ ตลาดและความบันเทิง")
         if st.button("🛒 มาร์เก็ตเพลส (Marketplace)", key="nav_market"): 
-            st.session_state.page = "Marketplace"
+            switch_page("Marketplace")
             st.rerun()
         if st.button("🎮 ศูนย์รวมเกมส์ (Gaming Hub)", key="nav_game"): 
-            st.session_state.page = "Gaming"
+            switch_page("Gaming")
             st.rerun()
         st.write("---")
         if st.button("🚪 ออกจากระบบ (Logout)", key="nav_logout"):
@@ -188,9 +187,7 @@ else:
         st.caption("เวอร์ชันคอนเซ็ปต์ใช้งานจริง • v2.5.0")
 
     # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY
-    # ----------------------------------------------------
-    # เมนูที่ 1: NEWS FEED (ฟีดข่าว อัปโหลดภาพ โพสต์ ไฮป์ คอมเมนต์)
-    # ----------------------------------------------------
+    # เมนูที่ 1: NEWS FEED (บอร์ดฟีดข่าวสารหลัก)
     if st.session_state.page == "Feed":
         st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface</h2>", unsafe_allow_html=True)
         
@@ -252,21 +249,16 @@ else:
                             new_comment = {"user": my_name, "text": c_text}
                             post['comments'].append(new_comment)
                             st.rerun()
-    else:
-        st.write("📌 หมวดหมู่นี้กำลังอัปเดตโค้ดในช่วงถัดไปคราบ เลือกเมนู 'ฟีดข่าวสังคม' ด้านซ้ายได้เลย")
-    # ----------------------------------------------------
-    # เมนูที่ 2: FRIENDS NETWORK (ระบบค้นหาและแอดเพิ่มเพื่อนจริง)
-    # ----------------------------------------------------
+    # เมนูที่ 2: FRIENDS NETWORK (ระบบค้นหาและเพิ่มเพื่อน)
     elif st.session_state.page == "FriendsList":
         st.markdown("<h2 style='color: #DB7093;'>👥 เครือข่ายการเพิ่มเพื่อนสมาชิกออนไลน์</h2>", unsafe_allow_html=True)
-        
         c1, c2 = st.columns(2)
         with c1:
             st.subheader("📌 เพื่อนของฉันตอนนี้")
             if not my_friends:
                 st.info("คุณยังไม่มีรายชื่อเพื่อนในระบบ ลองค้นหาเพิ่มด้านขวาคราบ")
             else:
-                for friend in my_friends:
+                for friend in my_friends: 
                     st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
         with c2:
             st.subheader("🔍 ค้นหาสมาชิกแอปรายอื่น")
@@ -276,7 +268,8 @@ else:
             else:
                 for user in strangers:
                     col_u, col_b = st.columns(2)
-                    with col_u: st.write(f"👤 ยูสเซอร์: **{user}**")
+                    with col_u: 
+                        st.write(f"👤 ยูสเซอร์: **{user}**")
                     with col_b:
                         if st.button("➕ แอดเพื่อน", key=f"add_{user}"):
                             db["friends"][my_name].append(user)
@@ -284,12 +277,9 @@ else:
                             st.success(f"เป็นเพื่อนกับ {user} แล้ว!")
                             st.rerun()
 
-    # ----------------------------------------------------
-    # เมนูที่ 3: MESSENGER (ห้องแชทสดพิมพ์คุยซิงค์ตรงกันทุกเครื่อง)
-    # ----------------------------------------------------
+    # เมนูที่ 3: MESSENGER (ห้องแชทสดพิมพ์คุยร่วมกัน)
     elif st.session_state.page == "GlobalChat":
         st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสด Messenger (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
-        
         chat_box = st.container(height=350, border=True)
         with chat_box:
             for chat in db["chats"]:
@@ -305,21 +295,17 @@ else:
                     db["chats"].append({"sender": my_name, "text": chat_input})
                     st.rerun()
 
-    # ----------------------------------------------------
-    # เมนูที่ 4: META AI CHATBOT (แชทบอทตอบคำถามจำลอง)
-    # ----------------------------------------------------
+    # เมนูที่ 4: META AI CHATBOT (แชทบอทถามตอบจำลอง)
     elif st.session_state.page == "MetaAI":
         st.markdown("<h2 style='color: #DB7093;'>🤖 Meta AI อัจฉริยะ</h2>", unsafe_allow_html=True)
-        for msg in st.session_state.ai_messages:
+        for msg in st.session_state.ai_messages: 
             st.chat_message(msg["role"]).write(msg["content"])
         if prompt := st.chat_input("พิมพ์ข้อความเพื่อคุยกับ AI..."):
             st.session_state.ai_messages.append({"role": "user", "content": prompt})
             st.session_state.ai_messages.append({"role": "assistant", "content": f"รับทราบค่ะคุณแมนเฟซ: '{prompt}'"})
             st.rerun()
 
-    # ----------------------------------------------------
-    # เมนูที่ 5: MARKETPLACE (หน้าตลาดช็อปปิ้งพรีเมียม เลือกใส่รถเข็น)
-    # ----------------------------------------------------
+    # เมนูที่ 5: MARKETPLACE (หน้ากระดานตลาดช็อปปิ้ง)
     elif st.session_state.page == "Marketplace":
         st.markdown("<h2 style='color: #DB7093;'>🛒 มาร์เก็ตเพลสสินค้าพรีเมียม</h2>", unsafe_allow_html=True)
         cols = st.columns(3)
@@ -331,28 +317,25 @@ else:
                     if st.button(f"🛍️ ใส่รถเข็น", key=f"buy_{prod['id']}"):
                         st.session_state.shopping_cart.append(prod)
                         st.toast(f"เพิ่ม {prod['title']} ลงรถเข็นแล้ว!")
-                        
         if st.session_state.shopping_cart:
             st.write("---")
             st.subheader("🛒 ตะกร้าสินค้าของคุณ")
-            for item in st.session_state.shopping_cart:
+            for item in st.session_state.shopping_cart: 
                 st.write(f"- {item['title']} : **{item['price']:,}** บาท")
 
-    # ----------------------------------------------------
-    # เมนูที่ 6: GAMING HUB (ศูนย์รวมมินิเกมส์เดาตัวเลขปริศนา)
-    # ----------------------------------------------------
+    # เมนูที่ 6: GAMING HUB (เกมเดาตัวเลขแก้ไขช่องไฟ)
     elif st.session_state.page == "Gaming":
         st.markdown("<h2 style='color: #DB7093;'>🎮 ศูนย์รวมเกมส์ (Gaming Hub)</h2>", unsafe_allow_html=True)
         st.write("ระบบเกมเดาตัวเลขปริศนา 1 - 100")
         guess = st.number_input("ทายตัวเลขที่คิดว่าใช่:", min_value=1, max_value=100, step=1)
         if st.button("🎯 ส่งคำตอบที่ทาย"):
             st.session_state.game_count += 1
-            if guess < st.session_state.game_number:
+            if guess < st.session_state.game_number: 
                 st.warning("📉 น้อยเกินไปคราบ! ลองทายตัวเลขที่มากกว่านี้ดู")
-            elif guess > st.session_state.game_number:
+            elif guess > st.session_state.game_number: 
                 st.warning("📈 มากเกินไปคราบ! ลองทายตัวเลขที่น้อยกว่านี้ดู")
             else:
-                st.success(f"🎉 ถูกต้องนะคราบ! ตัวเลขคือ {st.session_state.game_number} ทายไปทั้งหมด {st.session_state.game_count} ครั้ง")
+                st.success(f"🎉 ถูกต้องนะคราบ! ตัวเลขคือ {st.session_state.game_number} ทายไป {st.session_state.game_count} ครั้ง")
                 if st.button("🔄 เล่นใหม่อีกรอบ"):
                     st.session_state.game_number = random.randint(1, 100)
                     st.session_state.game_count = 0
