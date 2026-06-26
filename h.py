@@ -63,7 +63,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================================
-# SECTION 2: 📦 ระบบแชร์ข้อมูลภายใจแอป ความเร็วสูง (ไม่ล่ม 100%)
+# SECTION 2: 📦 ระบบแชร์ข้อมูลภายในแอป (Local Shared State)
 # =========================================================================
 @st.cache_resource
 def get_internal_db():
@@ -195,7 +195,6 @@ else:
                     st.markdown(f"<div style='text-align: right;'><span style='background-color:#FFB6C1; display:inline-block;' class='chat-bubble'><b>คุณ</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div style='text-align: left;'><span style='background-color:#FFF; border:1px solid #FFB6C1; display:inline-block;' class='chat-bubble'><b>{chat['sender']}</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
-        
         with st.form("send_live_msg", clear_on_submit=True):
             chat_input = st.text_input("พิมพ์ข้อความคุยแชทสด...")
             if st.form_submit_button("ส่งข้อความด่วน 🚀"):
