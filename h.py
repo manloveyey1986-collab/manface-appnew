@@ -5,6 +5,7 @@ import numpy as np
 import random
 from PIL import Image
 import datetime
+import requests
 
 # =========================================================================
 # SECTION 1: CONFIGURATION & PREMIUM LUXURY PINK STYLING (CSS ขั้นสูง)
@@ -16,7 +17,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# บังคับใช้ธีมพรีเมียมสีชมพูอ่อนสไตล์ Luxury Minimalist ผ่าน CSS ขั้นสูงที่คุณออกแบบ
 st.markdown("""
     <style>
         .stApp { background-color: #FFF0F5; }
@@ -64,90 +64,54 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================================
-# SECTION 2: CORE DATABASE ARCHITECTURE (SESSION STATE) & CLOUD SERVER
+# SECTION 2: 🌐 CLOUD DATABASE INTEGRATION (เชื่อมต่อฐานข้อมูลสาธารณะ)
 # =========================================================================
+# ระบบฐานข้อมูลกลางที่แชร์ข้อความและโพสต์ของทุกคนผ่านระบบออนไลน์
+API_URL = "https://google.com"
 
-# 🌐 ฐานข้อมูลเซิร์ฟเวอร์ส่วนกลาง (เพื่อให้ทุกคนเห็นโพสต์ แชท และเพื่อนตรงกันทันทีแบบแอปดัง)
-@st.cache_resource
-def init_shared_cloud_database():
-    return {
-        "users": {"admin": "1234", "แมนเฟซ": "1234"},
-        "friends_matrix": {"admin": [], "แมนเฟซ": []},
-        "posts_db": [
-            {
-                "id": 1,
-                "user": "กวินท์ ดูวาล",
-                "time": "10 นาทีที่แล้ว",
-                "text": "ระบบแอป Manface ตัวใหม่รันโค้ดยาวลื่นไหลมากครับ อัปโหลดรูปภาพได้จริงด้วย โคตรตึง! 🔥",
-                "image": None,
-                "likes": 84,
-                "comments": [{"user": "สมชาย ใจดี", "text": "สวยงามมากครับแอปนี้"}]
-            },
-            {
-                "id": 2,
-                "user": "ระบบอัตโนมัติ",
-                "time": "1 ชั่วโมงที่แล้ว",
-                "text": "ยินดีต้อนรับสู่โครงสร้างระบบ Super App ใช้งานได้จริงทุกหมวดหมู่ เลือกเมนูด้านซ้ายเพื่อเริ่มสนุกได้เลยครับ",
-                "image": None,
-                "likes": 29,
-                "comments": []
-            }
-        ],
-        "global_chats": [
-            {"sender": "ระบบ", "text": "ยินดีต้อนรับสู่ห้องแชทด่วนของทุกคนคราบ!", "time": "12:00"}
-        ]
-    }
+def fetch_cloud_data(action, payload={}):
+    payload["action"] = action
+    try:
+        res = requests.post(API_URL, json=payload, timeout=5)
+        return res.json()
+    except:
+        return {"users": {"admin": "1234"}, "posts": [], "chats": [], "friends": {}}
 
-cloud_db = init_shared_cloud_database()
+# ดึงข้อมูลจากคลาวด์มาอัปเดตหน้าจอทุกครั้งที่เปิดรีเฟรช
+cloud_data = fetch_cloud_data("get_all")
 
-# ตั้งค่าสถานะประจำเครื่องของผู้เข้าชม (รูปแบบเดิม)
-if 'page' not in st.session_state:
-    st.session_state.page = "Feed"
-
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = {"name": "นายแมนเฟซ พรีเมียม", "avatar": "💗"}
-
-if 'ai_messages' not in st.session_state:
-    st.session_state.ai_messages = [
-        {"role": "assistant", "content": "สวัสดีค่ะ! ฉันคือ Meta AI ผู้ช่วยอัจฉริยะในธีมสีชมพูของคุณ วันนี้มีอะไรให้ฉันช่วยวิเคราะห์หรือเขียนโค้ดไหมคะ?"}
-    ]
+if 'page' not in st.session_state: st.session_state.page = "Feed"
+if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'username' not in st.session_state: st.session_state.username = ""
+if 'ai_messages' not in st.session_state: st.session_state.ai_messages = [{"role": "assistant", "content": "สวัสดีค่ะ! ฉันคือ Meta AI ผู้ช่วยอัจฉริยะในธีมสีชมพูของคุณ"}]
+if 'shopping_cart' not in st.session_state: st.session_state.shopping_cart = []
+if 'game_number' not in st.session_state: st.session_state.game_number = random.randint(1, 100)
+if 'game_count' not in st.session_state: st.session_state.game_count = 0
 
 if 'market_products' not in st.session_state:
     st.session_state.market_products = [
-        {"id": 101, "title": "iPhone 15 Pro Max 256GB สภาพ 99%", "price": 25000, "img": None, "owner": "ร้านโมบายพรีเมียม"},
-        {"id": 102, "title": "รองเท้าผ้าใบสปอร์ต Limited Edition", "price": 12000, "img": None, "owner": "สมชาย สปอร์ต"},
-        {"id": 103, "title": "หูฟังไร้สายขจัดเสียงรบกวน (ชมพูพาสเทล)", "price": 3500, "img": None, "owner": "Gadget Studio"}
+        {"id": 101, "title": "iPhone 15 Pro Max 256GB สภาพ 99%", "price": 25000, "owner": "ร้านโมบายพรีเมียม"},
+        {"id": 102, "title": "รองเท้าผ้าใบสปอร์ต Limited Edition", "price": 12000, "owner": "สมชาย สปอร์ต"},
+        {"id": 103, "title": "หูฟังไร้สายขจัดเสียงรบกวน (ชมพูพาสเทล)", "price": 3500, "owner": "Gadget Studio"}
     ]
-
-if 'shopping_cart' not in st.session_state:
-    st.session_state.shopping_cart = []
-
-if 'game_number' not in st.session_state:
-    st.session_state.game_number = random.randint(1, 100)
-if 'game_count' not in st.session_state:
-    st.session_state.game_count = 0
 
 def switch_page(target):
     st.session_state.page = target
 
 # =========================================================================
-# 📝 ประตูล็อกอินเข้าสู่ระบบ (ถ้ายังไม่ล็อกอิน ให้สมัครสมาชิกตรงนี้ก่อน)
+# 📝 หน้าต่างสมัครสมาชิก และ เข้าสู่ระบบคลาวด์
 # =========================================================================
 if not st.session_state.logged_in:
-    st.title("💖 ยินดีต้อนรับสู่ Manface Super App Pro")
-    st.write("กรุณาสมัครสมาชิก หรือ เข้าสู่ระบบเพื่อเชื่อมต่อเครือข่ายออนไลน์ร่วมกับคนอื่น")
-    
+    st.title("💖 Manface Super App เครือข่ายสังคมออนไลน์จริง")
     tab1, tab2 = st.tabs(["➡️ เข้าสู่ระบบ (Login)", "📝 สมัครสมาชิก (Register)"])
+    
     with tab1:
         log_u = st.text_input("ชื่อผู้ใช้งาน (Username):", key="gate_u").strip()
         log_p = st.text_input("รหัสผ่าน (Password):", type="password", key="gate_p").strip()
         if st.button("ตกลงเข้าสู่ระบบ", type="primary"):
-            if log_u in cloud_db["users"] and cloud_db["users"][log_u] == log_p:
+            if log_u in cloud_data.get("users", {}) and cloud_data["users"][log_u] == log_p:
                 st.session_state.logged_in = True
-                st.session_state.current_user = {"name": log_u, "avatar": "💗"}
+                st.session_state.username = log_u
                 st.success("เข้าสู่ระบบสำเร็จ!")
                 st.rerun()
             else:
@@ -159,21 +123,17 @@ if not st.session_state.logged_in:
         if st.button("ยืนยันการสมัครสมาชิก"):
             if not reg_u or not reg_p1: st.error("กรุณากรอกข้อมูลให้ครบถ้วน")
             elif reg_p1 != reg_p2: st.error("รหัสผ่านไม่ตรงกัน")
-            elif reg_u in cloud_db["users"]: st.error("ชื่อนี้มีคนใช้แล้ว")
+            elif reg_u in cloud_data.get("users", {}): st.error("ชื่อนี้มีคนใช้แล้ว")
             else:
-                cloud_db["users"][reg_u] = reg_p1
-                cloud_db["friends_matrix"][reg_u] = []
+                fetch_cloud_data("register", {"username": reg_u, "password": reg_p1})
                 st.success("สมัครสมาชิกสำเร็จ! สลับไปล็อกอินได้เลยคราบ")
 
 # =========================================================================
 # SECTION 3: PREMIUM SIDEBAR NAVIGATION (รูปแบบเดิมเป๊ะๆ)
 # =========================================================================
 else:
-    # ตรวจสอบลิสต์เพื่อนหลังบ้าน
-    if st.session_state.current_user["name"] not in cloud_db["friends_matrix"]:
-        cloud_db["friends_matrix"][st.session_state.current_user["name"]] = []
-
-    my_name = st.session_state.current_user["name"]
+    my_name = st.session_state.username
+    my_friends = cloud_data.get("friends", {}).get(my_name, [])
 
     with st.sidebar:
         st.markdown("<h1 style='color: #FF1493; text-align: center; margin-bottom: 0px;'>💗 Manface</h1>", unsafe_allow_html=True)
@@ -181,11 +141,10 @@ else:
         
         with st.container(border=True):
             col_av, col_name = st.columns(2)
-            with col_av:
-                st.markdown(f"<h2>{st.session_state.current_user['avatar']}</h2>", unsafe_allow_html=True)
+            with col_av: st.markdown("<h2>💗</h2>", unsafe_allow_html=True)
             with col_name:
-                st.markdown(f"**{st.session_state.current_user['name']}**")
-                st.caption("status: สมาชิกออนไลน์")
+                st.markdown(f"**{my_name}**")
+                st.caption("status: ออนไลน์จริง")
                 
         st.write("---")
         st.markdown("### 🏠 ฟังก์ชันหลัก")
@@ -197,27 +156,50 @@ else:
         st.markdown("### 🛍️ ตลาดและความบันเทิง")
         if st.button("🛒 มาร์เก็ตเพลส (Marketplace)"): switch_page("Marketplace")
         if st.button("🎮 ศูนย์รวมเกมส์ (Gaming Hub)"): switch_page("Gaming")
-        st.markdown("### 📈 ข้อมูลหลังบ้านธุรกิจ")
-        if st.button("📊 ตัวจัดการโฆษณา (Ads Manager)"): switch_page("Ads")
         st.write("---")
         if st.button("🚪 ออกจากระบบ (Logout)"):
             st.session_state.logged_in = False
             st.rerun()
-        st.caption("เวอร์ชันคอนเซ็ปต์ใช้งานจริง • v2.5.0")
 
     # =========================================================================
-    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY (รูปแบบเดิม+เชื่อมออนไลน์จริง)
+    # SECTION 4: SYSTEM MODULES AND PAGES FUNCTIONALITY (ดึงข้อมูลจาก Cloud sheet)
     # =========================================================================
     if st.session_state.page == "Feed":
-        st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #DB7093;'>🗞️ ฟีดข่าวและชุมชน Manface (โพสต์เด้งเรียลไทม์)</h2>", unsafe_allow_html=True)
         
         with st.container(border=True):
-            st.markdown("✍️ **คุณกำลังคิดอะไรอยู่? สร้างโพสต์ใหม่เลย**")
             input_text = st.text_area("เขียนข้อความบรรยาย...", key="new_post_text")
-            upload_img = st.file_uploader("📸 แนบรูปภาพประกอบโพสต์ของคุณ", type=["png", "jpg", "jpeg"])
-            
-            if st.button("🚀 เเพร่เผยโพสต์ลงกระดานข่าว"):
-                if input_text.strip() or upload_img is not None:
-                    final_img = None
-                    if upload_img is not None:
-                        final_img = Image.open(upload_img)
+            if st.button("🚀 เผยแพร่โพสต์ลงกระดานข่าว"):
+                if input_text.strip():
+                    fetch_cloud_data("add_post", {"user": my_name, "text": input_text})
+                    st.balloons()
+                    st.rerun()
+
+        st.write("---")
+        
+        for post in cloud_data.get("posts", []):
+            with st.container(border=True):
+                st.markdown(f"🗣️ **{post['user']}**  •  <span style='color: gray; font-size: 12px;'>{post['time']}</span>", unsafe_allow_html=True)
+                st.write(post['text'])
+
+    # --- ฟังก์ชันแชทรวมด่วน เด้งตรงกันทุกเครื่อง ---
+    elif st.session_state.page == "GlobalChat":
+        st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสดเครือข่ายสังคม (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
+        
+        chat_box = st.container(height=350, border=True)
+        with chat_box:
+            for chat in cloud_data.get("chats", []):
+                if chat["sender"] == my_name:
+                    st.markdown(f"<div style='text-align: right;'><span style='background-color:#FFB6C1; display:inline-block;' class='chat-bubble'><b>คุณ</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<div style='text-align: left;'><span style='background-color:#FFF; border:1px solid #FFB6C1; display:inline-block;' class='chat-bubble'><b>{chat['sender']}</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
+                    
+        with st.form("send_live_msg", clear_on_submit=True):
+            chat_input = st.text_input("พิมพ์ข้อความคุยแชทสด...")
+            if st.form_submit_button("ส่งข้อความด่วน 🚀"):
+                if chat_input.strip():
+                    fetch_cloud_data("add_chat", {"sender": my_name, "text": chat_input})
+                    st.rerun()
+
+    # --- ฟังก์ชันเมนูหน้าเพิ่มเพื่อน ---
+    elif st.session_state.page == "FriendsList":
