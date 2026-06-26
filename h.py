@@ -1,10 +1,10 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 import random
 from PIL import Image
 import datetime
-import requests
 
 # =========================================================================
 # SECTION 1: CONFIGURATION & PREMIUM LUXURY PINK STYLING (CSS ขั้นสูง)
@@ -63,20 +63,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================================
-# SECTION 2: 🌐 CLOUD DATABASE INTEGRATION (เชื่อมต่อฐานข้อมูลสาธารณะ)
+# SECTION 2: 📦 ระบบแชร์ข้อมูลภายใจแอป ความเร็วสูง (ไม่ล่ม 100%)
 # =========================================================================
-API_URL = "https://google.com"
+@st.cache_resource
+def get_internal_db():
+    return {
+        "users": {"admin": "1234", "manface": "1234"},
+        "posts": [
+            {"user": "ระบบ", "time": "เริ่มต้น", "text": "ยินดีต้อนรับสู่ Manface Super App บอร์ดข่าวสารกลางแชร์ข้อมูลได้จริงแล้วคราบ!"}
+        ],
+        "chats": [
+            {"sender": "ระบบ", "text": "ยินดีต้อนรับสู่ห้องแชทสดส่วนกลางของทุกคนคราบ"}
+        ],
+        "friends": {"admin": [], "manface": []}
+    }
 
-def fetch_cloud_data(action, payload={}):
-    payload["action"] = action
-    try:
-        res = requests.post(API_URL, json=payload, timeout=5)
-        return res.json()
-    except:
-        return {"users": {"admin": "1234"}, "posts": [], "chats": [], "friends": {}}
+db = get_internal_db()
 
-cloud_data = fetch_cloud_data("get_all")
-
+# ตัวแปรประจำเครื่องคนเปิดดู
 if 'page' not in st.session_state: st.session_state.page = "Feed"
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'username' not in st.session_state: st.session_state.username = ""
@@ -96,50 +100,54 @@ def switch_page(target):
     st.session_state.page = target
 
 # =========================================================================
-# 📝 หน้าต่างสมัครสมาชิก และ เข้าสู่ระบบคลาวด์
+# 📝 GATEWAY: หน้าต่างระบบสมัครสมาชิก และ เข้าสู่ระบบ
 # =========================================================================
 if not st.session_state.logged_in:
     st.title("💖 ยินดีต้อนรับสู่ Manface Super App Pro")
-    st.write("กรุณาสมัครสมาชิก หรือ เข้าสู่ระบบเพื่อเชื่อมต่อเครือข่ายออนไลน์ร่วมกับคนอื่น")
+    st.write("กรุณาสมัครสมาชิก หรือ เข้าสู่ระบบเพื่อเชื่อมต่อสังคมออนไลน์จริง")
     
     tab1, tab2 = st.tabs(["➡️ เข้าสู่ระบบ (Login)", "📝 สมัครสมาชิก (Register)"])
     
     with tab1:
+        st.subheader("🔑 ลงชื่อเข้าใช้งาน")
         log_u = st.text_input("ชื่อผู้ใช้งาน (Username):", key="gate_u").strip()
         log_p = st.text_input("รหัสผ่าน (Password):", type="password", key="gate_p").strip()
         if st.button("ตกลงเข้าสู่ระบบ", type="primary"):
-            if log_u in cloud_data.get("users", {}) and cloud_data["users"][log_u] == log_p:
+            if log_u in db["users"] and db["users"][log_u] == log_p:
                 st.session_state.logged_in = True
                 st.session_state.username = log_u
-                st.success("เข้าสู่ระบบสำเร็จ!")
+                st.success("เข้าสู่ระบบสำเร็จคราบ!")
                 st.rerun()
             else:
-                st.error("Username หรือ Password ไม่ถูกต้องคราบ")
+                st.error("ชื่อผู้ใช้งาน หรือ รหัสผ่านไม่ถูกต้องคราบ")
                 
     with tab2:
+        st.subheader("📝 สมัครสมาชิกใหม่")
         reg_u = st.text_input("ตั้งชื่อผู้ใช้งาน (ภาษาอังกฤษ):", key="gate_reg_u").strip()
         reg_p1 = st.text_input("ตั้งรหัสผ่าน:", type="password", key="gate_reg_p1").strip()
         reg_p2 = st.text_input("ยืนยันรหัสผ่านอีกครั้ง:", type="password", key="gate_reg_p2").strip()
         if st.button("ยืนยันการสมัครสมาชิก"):
             if not reg_u or not reg_p1: st.error("กรุณากรอกข้อมูลให้ครบถ้วน")
-            elif reg_p1 != reg_p2: st.error("รหัสผ่านไม่ตรงกัน")
-            elif reg_u in cloud_data.get("users", {}): st.error("ชื่อนี้มีคนใช้แล้ว")
+            elif reg_p1 != reg_p2: st.error("รหัสผ่านสองช่องไม่ตรงกัน")
+            elif reg_u in db["users"]: st.error("ชื่อผู้ใช้งานนี้ถูกใช้ไปแล้ว")
             else:
-                fetch_cloud_data("register", {"username": reg_u, "password": reg_p1})
-                st.success("สมัครสมาชิกสำเร็จ! สลับไปล็อกอินได้เลยคราบ")
+                db["users"][reg_u] = reg_p1
+                db["friends"][reg_u] = []
+                st.success("สมัครสมาชิกสำเร็จ! สลับไปที่แท็บ 'เข้าสู่ระบบ' ได้เลยคราบ")
 
 # =========================================================================
-# SECTION 3 & 4: APPLICATION MAIN MODULES
+# SECTION 3 & 4: APPLICATION MAIN MODULES (ทำงานเมื่อเข้าสู่ระบบแล้ว)
 # =========================================================================
 else:
     my_name = st.session_state.username
-    my_friends = cloud_data.get("friends", {}).get(my_name, [])
+    if my_name not in db["friends"]: db["friends"][my_name] = []
+    my_friends = db["friends"][my_name]
 
     with st.sidebar:
         st.markdown("<h1 style='color: #FF1493; text-align: center; margin-bottom: 0px;'>💗 Manface</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #DB7093; font-size: 14px;'>Super App Ecosystem Pro</p>", unsafe_allow_html=True)
         with st.container(border=True):
-            st.markdown(f"**{my_name}** (ออนไลน์จริง)")
+            st.markdown(f"**{my_name}** (ออนไลน์)")
         st.write("---")
         st.markdown("### 🏠 ฟังก์ชันหลัก")
         if st.button("🗞️ ฟีดข่าวสังคม (News Feed)"): switch_page("Feed")
@@ -160,11 +168,12 @@ else:
             input_text = st.text_area("เขียนข้อความบรรยาย...", key="new_post_text")
             if st.button("🚀 เผยแพร่โพสต์ลงกระดานข่าว"):
                 if input_text.strip():
-                    fetch_cloud_data("add_post", {"user": my_name, "text": input_text})
+                    now_time = datetime.datetime.now().strftime("%H:%M:%S")
+                    db["posts"].insert(0, {"user": my_name, "time": now_time, "text": input_text})
                     st.balloons()
                     st.rerun()
         st.write("---")
-        for post in cloud_data.get("posts", []):
+        for post in db["posts"]:
             with st.container(border=True):
                 st.markdown(f"🗣️ **{post['user']}**  •  <span style='color: gray; font-size: 12px;'>{post['time']}</span>", unsafe_allow_html=True)
                 st.write(post['text'])
@@ -172,7 +181,8 @@ else:
     elif st.session_state.page == "FriendsList":
         st.markdown("<h2 style='color: #DB7093;'>👥 เครือข่ายการเพิ่มเพื่อนสมาชิกออนไลน์</h2>", unsafe_allow_html=True)
         st.subheader("📌 เพื่อนของฉันตอนนี้")
-        if not my_friends: st.info("คุณยังไม่มีรายชื่อเพื่อนในระบบ")
+        if not my_friends: 
+            st.info("คุณยังไม่มีรายชื่อเพื่อนในระบบ")
         else:
             for friend in my_friends: st.write(f"🧑 **{friend}** (เป็นเพื่อนกันแล้ว)")
 
@@ -180,20 +190,17 @@ else:
         st.markdown("<h2 style='color: #DB7093;'>💬 ห้องแชทสดเครือข่ายสังคม (ซิงค์ทุกเครื่อง)</h2>", unsafe_allow_html=True)
         chat_box = st.container(height=350, border=True)
         with chat_box:
-            for chat in cloud_data.get("chats", []):
+            for chat in db["chats"]:
                 if chat["sender"] == my_name:
                     st.markdown(f"<div style='text-align: right;'><span style='background-color:#FFB6C1; display:inline-block;' class='chat-bubble'><b>คุณ</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
                 else:
                     st.markdown(f"<div style='text-align: left;'><span style='background-color:#FFF; border:1px solid #FFB6C1; display:inline-block;' class='chat-bubble'><b>{chat['sender']}</b>: {chat['text']}</span></div>", unsafe_allow_html=True)
+        
         with st.form("send_live_msg", clear_on_submit=True):
             chat_input = st.text_input("พิมพ์ข้อความคุยแชทสด...")
             if st.form_submit_button("ส่งข้อความด่วน 🚀"):
                 if chat_input.strip():
-                    fetch_cloud_data("add_chat", {"sender": my_name, "text": chat_input})
+                    db["chats"].append({"sender": my_name, "text": chat_input})
                     st.rerun()
 
     elif st.session_state.page == "MetaAI":
-        st.markdown("<h2 style='color: #DB7093;'>🤖 Meta AI อัจฉริยะ</h2>", unsafe_allow_html=True)
-        for msg in st.session_state.ai_messages: st.chat_message(msg["role"]).write(msg["content"])
-        if prompt := st.chat_input("พิมพ์ข้อความเพื่อคุยกับ AI..."):
-            st.session_state.ai_messages.append({"role": "user", "content": prompt})
